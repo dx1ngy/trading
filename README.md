@@ -75,11 +75,11 @@
 8. 启动客户端页面  
    使用浏览器访问index.html（trading/html目录下）。
 
-### API文档
+## API文档
 
 启动项目后访问Swagger UI：http://localhost:9000/swagger-ui/index.html
 
-### 性能测试
+## 性能测试
 
 基于32核CPU/128G内存环境，每秒可以处理15万+订单
 
