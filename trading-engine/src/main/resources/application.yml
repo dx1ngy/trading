@@ -1,0 +1,63 @@
+server:
+  port: 9001
+  servlet:
+    encoding:
+      force: true
+      charset: UTF-8
+  undertow:
+    url-charset: UTF-8
+logging:
+  level:
+    com.dx1ngy: info
+    org.zalando.logbook: info
+    org.springframework.kafka: info
+logbook:
+  format:
+    style: http
+  predicate:
+    include:
+      - path: /**
+    exclude:
+      - path: /swagger-ui/**
+      - path: /v3/**
+spring:
+  profiles:
+    active: dev
+  application:
+    name: trading-engine-${spring.profiles.active}
+  jackson:
+    default-property-inclusion: non_null
+    deserialization:
+      fail_on_unknown_properties: false
+    time-zone: Asia/Shanghai
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+mybatis-plus:
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath*:mappers/*.xml
+sa-token:
+  token-name: token
+  timeout: 2592000
+  is-concurrent: false
+  is-share: true
+  token-style: simple-uuid
+  is-log: true
+  is-read-body: false
+  is-read-cookie: false
+  is-read-header: true
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: "*"
+#  endpoint:
+#    health:
+#      show-details: always

@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            font-size: 1vw;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .action-bar {
+            padding-bottom: 5px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-bar-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .chart-area {
+            flex: 1;
+            background-color: #ffffff;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 5fr 3fr;
+            grid-template-rows: 5fr 3fr;
+            gap: 10px;
+        }
+
+        .block {
+            padding: 5px;
+            background-color: #e5ebff;
+        }
+
+        .top-left {
+            grid-area: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+        }
+
+        .right-top {
+            grid-area: 1 / 2;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .rt1 {
+            flex: 3;
+        }
+
+        .rt2 {
+            flex: 5;
+        }
+
+        .bottom-left {
+            grid-area: 2 / 1;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .bottom-right {
+            grid-area: 2 / 2;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bottom-right-top {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            flex: 1;
+        }
+
+        .grid-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: cornsilk;
+        }
+
+        .bottom-right-top button {
+            width: 5vw !important;
+        }
+
+        .bottom-right-bottom {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            flex: 2.5;
+        }
+
+        .bottom-right input {
+            padding: 3px;
+            border: 1px solid #ddd;
+            width: 6.5vw;
+        }
+
+        .bottom-right button {
+            padding: 0.5vw 1vw;
+            border: none;
+            cursor: pointer;
+            width: 10vw;
+        }
+
+        .order-item.sell {
+            background-color: #ffe5e5;
+        }
+
+        .order-item.buy {
+            background-color: #e5ffe5;
+        }
+
+        .order-item {
+            height: calc(100% / 6);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            align-items: center;
+            text-align: center;
+        }
+
+        .deal-item {
+            height: calc(100% / 11);
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            align-items: center;
+            text-align: center;
+            background-color: bisque;
+        }
+
+        .order-list-item {
+            height: calc(100% / 11);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            align-items: center;
+            text-align: center;
+            background-color: #ffe5e5;
+        }
+
+        .order-list-button {
+            border: none;
+            cursor: pointer;
+            background-color: #CAB8E2;
+        }
+
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus"></script>
+    <script src="https://cdn.jsdelivr.net/npm/klinecharts/dist/umd/klinecharts.min.js"></script>
+</head>
+<body>
+<div id="app" style="height: 100%;width: 100%">
+    <div v-show="loading" class="loading-overlay">loading...</div>
+    <div class="container">
+        <div class="block top-left">
+            <div class="action-bar">
+                <div class="action-bar-item">
+                    <select v-model="goodsId" @change="goodsChange">
+                        <option v-for="goods in goodsList" :value="goods.id" :key="goods.id">
+                            {{ goods.name }}
+                        </option>
+                    </select>
+                </div>
+                <div class="action-bar-item">
+                    <select v-model="interval" @change="intervalChange">
+                        <option v-for="interval in intervalList" :value="interval.id" :key="interval.id">
+                            {{ interval.name }}
+                        </option>
+                    </select>
+                </div>
+                <div class="action-bar-item">
+                    当前价：<span>{{ currentPrice }}</span>
+                </div>
+                <div class="action-bar-item">
+                    涨停价：<span>{{ upPrice }}</span>
+                </div>
+                <div class="action-bar-item">
+                    跌停价：<span>{{ downPrice }}</span>
+                </div>
+                <div class="action-bar-item">
+                    保证金：<span>{{ margin }}</span>
+                </div>
+                <div class="action-bar-item">
+                    手续费：<span>{{ fee }}</span>
+                </div>
+            </div>
+            <div class="chart-area">
+                <div id="chart" style="height: 100%;width: 100%"></div>
+            </div>
+        </div>
+        <div class="block bottom-left">
+            <div class="order-list-item">
+                <div>订单号</div>
+                <div>类型</div>
+                <div>价格</div>
+                <div>保证金</div>
+                <div>手续费</div>
+                <div>总数量</div>
+                <div>可成交</div>
+                <div>操作</div>
+            </div>
+            <div class="order-list-item" v-for="order in orderList" :key="order.orderId">
+                <div>{{ order.orderId }}</div>
+                <div>{{ orderTypeLabels[order.type] }}</div>
+                <div>{{ order.price }}</div>
+                <div>{{ order.margin }}</div>
+                <div>{{ order.fee }}</div>
+                <div>{{ order.num }}</div>
+                <div>{{ order.availableNum }}</div>
+                <div>
+                    <button class="order-list-button" @click="cancel(order.orderId)">撤销</button>
+                </div>
+            </div>
+        </div>
+        <div class="right-top">
+            <div class="block rt1">
+                <div class="order-item sell" v-for="sell in sellList" :key="sell.label">
+                    <div class="label">{{ sell.label }}</div>
+                    <div class="price">{{ sell.price }}</div>
+                    <div class="num">{{ sell.num }}</div>
+                    <div class="total">{{ sell.total }}</div>
+                </div>
+                <div class="order-item buy" v-for="buy in buyList" :key="buy.label">
+                    <div class="label">{{ buy.label }}</div>
+                    <div class="price">{{ buy.price }}</div>
+                    <div class="num">{{ buy.num }}</div>
+                    <div class="total">{{ buy.total }}</div>
+                </div>
+            </div>
+            <div class="block rt2">
+                <div class="deal-item">
+                    <div>时间</div>
+                    <div>成交价</div>
+                    <div>数量</div>
+                    <div>总价</div>
+                </div>
+                <div class="deal-item" v-for="deal in dealList" :key="deal.dealId">
+                    <div class="dealTime">{{ deal.dealTime }}</div>
+                    <div class="price">{{ deal.price }}</div>
+                    <div class="num">{{ deal.num }}</div>
+                    <div class="total">{{ deal.total }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom-right">
+            <div class="block bottom-right-top">
+                <div class="grid-item">用户名：<span> {{ username }}</span></div>
+                <div class="grid-item">
+                    <label>金额：</label>
+                    <input type="number" v-model="moneyInOut" min="1" step="1" placeholder="输入金额">
+                </div>
+                <div class="grid-item">可用余额：<span>{{ money }}</span></div>
+                <div class="grid-item">
+                    <button style="background-color: #E3C598;" @click="moneyIn">入金</button>
+                    <button style="background-color: #D4A6B3;" @click="moneyOut">出金</button>
+                </div>
+            </div>
+            <div class="block bottom-right-bottom">
+                <div class="grid-item">保证金占用：<span>{{ marginTotal }}</span></div>
+                <div class="grid-item">浮动盈亏：<span>{{ gainLossTotal }}</span></div>
+                <div class="grid-item">可平多头持仓：<span>{{ longNum }}</span></div>
+                <div class="grid-item">可平空头持仓：<span>{{ shortNum }}</span></div>
+                <div class="grid-item">
+                    <label>价格：</label>
+                    <input type="number" v-model="price" min="1" step="1" placeholder="输入价格">
+                </div>
+                <div class="grid-item">
+                    <label>数量：</label>
+                    <input type="number" v-model="num" min="1" step="1" placeholder="输入数量">
+                </div>
+                <div class="grid-item">
+                    <button style="background-color: #8AAAE5;" @click="openLong">开多</button>
+                </div>
+                <div class="grid-item">
+                    <button style="background-color: #8DB596;" @click="openShort">开空</button>
+                </div>
+                <div class="grid-item">
+                    <button style="background-color: #FFB5A7;" @click="closeLong">平多</button>
+                </div>
+                <div class="grid-item">
+                    <button style="background-color: #CAB8E2;" @click="closeShort">平空</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const {createApp, ref, computed, onMounted} = Vue
+    const {ElMessage} = ElementPlus
+
+    const App = createApp({
+        setup() {
+
+            let chart = null
+            let isChartInit = false
+            const url = "http://127.0.0.1:9000"
+
+            const loading = ref(true)
+            const goodsId = ref(1);
+            const goodsList = ref([{
+                id: 1,
+                name: "香蕉"
+            }, {
+                id: 2,
+                name: "苹果"
+            }])
+
+            const interval = ref(1)
+            const intervalList = ref([{
+                id: 1,
+                name: "1秒"
+            }, {
+                id: 60,
+                name: "1分钟"
+            }, {
+                id: 3600,
+                name: "1小时"
+            }, {
+                id: 86400,
+                name: "1天"
+            }])
+
+            const currentPrice = ref("")
+            const upPrice = ref("")
+            const downPrice = ref("")
+            const margin = ref("")
+            const fee = ref("")
+
+            const userId = ref(localStorage.getItem("userId"))
+            const username = ref(localStorage.getItem("username"))
+            const money = ref("")
+            const marginTotal = ref("")
+            const gainLossTotal = ref("")
+            const longNum = ref("")
+            const shortNum = ref("")
+
+            const orderList = ref([])
+            const orderTypeMap = {0: "开多", 1: "平多", 2: "开空", 3: "平空"}
+            const orderTypeLabels = computed(() => orderTypeMap)
+
+            const sellList = ref([])
+            const buyList = ref([])
+            const dealList = ref([])
+
+            const moneyInOut = ref(100)
+            const price = ref(100)
+            const num = ref(1)
+
+            const login = () => {
+                if (!username.value) {
+                    username.value = Math.random().toString(16).substring(2)
+                }
+                signUp()
+            }
+
+            const init = async () => {
+                await Promise.all([
+                    userInfo(),
+                    userGoodsInfo(),
+                    userOrderList(),
+                    userOrderBook(),
+                    userDealList(),
+                    kline(),
+                    webSocket()
+                ]);
+                setTimeout(() => loading.value = false, 100)
+            }
+
+            const goodsChange = () => {
+                userInfo()
+                userGoodsInfo()
+                userOrderList()
+                userOrderBook()
+                userDealList()
+                kline()
+            }
+
+            const intervalChange = () => {
+                kline()
+            }
+
+            const signUp = async () => {
+                const req = {username: username.value}
+                const data = await httpPost(url + '/user/sign-up', req)
+                localStorage.setItem("userId", data.data.userId)
+                localStorage.setItem("username", data.data.username)
+                localStorage.setItem("token", data.data.token)
+                userId.value = data.data.userId
+                init()
+            }
+
+            const userInfo = async () => {
+                const req = {goodsId: goodsId.value}
+                const data = await httpPost(url + '/user/info', req)
+                money.value = data.data.money
+                marginTotal.value = data.data.margin
+                gainLossTotal.value = data.data.gainLoss
+                longNum.value = data.data.longNum
+                shortNum.value = data.data.shortNum
+            }
+
+            const userGoodsInfo = async () => {
+                const req = {goodsId: goodsId.value}
+                const data = await httpPost(url + '/user/goods-info', req)
+                currentPrice.value = data.data.currentPrice
+                upPrice.value = data.data.upPrice
+                downPrice.value = data.data.downPrice
+                margin.value = data.data.margin
+                fee.value = data.data.fee
+            }
+
+            const userOrderList = async () => {
+                const req = {goodsId: goodsId.value}
+                const data = await httpPost(url + '/user/order-list', req)
+                orderList.value = data.data.orderList
+            }
+
+            const userOrderBook = async () => {
+                const req = {goodsId: goodsId.value}
+                const data = await httpPost(url + '/user/order-book', req)
+                sellList.value = []
+                buyList.value = []
+                let total = 0
+                for (let i = 0; i < 3; i++) {
+                    const sell = data.data.sellList[i]
+                    if (sell) {
+                        total += sell.total
+                        sellList.value.unshift({
+                            "label": "卖" + (i + 1),
+                            "price": sell.price,
+                            "num": sell.num,
+                            "total": total
+                        })
+                    } else {
+                        sellList.value.unshift({
+                            "label": "卖" + (i + 1),
+                            "price": "",
+                            "num": "",
+                            "total": ""
+                        })
+                    }
+                }
+                total = 0
+                for (let i = 0; i < 3; i++) {
+                    const buy = data.data.buyList[i]
+                    if (buy) {
+                        total += buy.total
+                        buyList.value.push({
+                            "label": "买" + (i + 1),
+                            "price": buy.price,
+                            "num": buy.num,
+                            "total": total
+                        })
+                    } else {
+                        buyList.value.push({
+                            "label": "买" + (i + 1),
+                            "price": "",
+                            "num": "",
+                            "total": ""
+                        })
+                    }
+                }
+            }
+
+            const userDealList = async () => {
+                const req = {goodsId: goodsId.value}
+                const data = await httpPost(url + '/user/deal-list', req)
+                dealList.value = data.data.dealList
+            }
+
+            const kline = async () => {
+                if (chart) {
+                    klinecharts.dispose('chart')
+                    isChartInit = false
+                }
+                chart = klinecharts.init('chart', {
+                    locale: 'zh-CN',
+                    layout: [
+                        {
+                            type: 'candle',
+                            content: ['MA', {name: 'EMA', calcParams: [10, 30]}],
+                            options: {order: Number.MIN_SAFE_INTEGER}
+                        },
+                        {type: 'indicator', content: ['VOL'], options: {order: 10}},
+                        {type: 'xAxis', options: {order: 9}}
+                    ]
+                })
+                const req = {goodsId: goodsId.value, interval: interval.value}
+                const data = await httpPost(url + '/user/kline', req)
+                const tickList = data.data.tickList
+                if (tickList.length > 0) {
+                    isChartInit = true
+                }
+                chart.applyNewData(tickList)
+            }
+
+            const moneyIn = async () => {
+                const req = {num: moneyInOut.value}
+                await httpPost(url + '/user/money-in', req)
+            }
+
+            const moneyOut = async () => {
+                const req = {num: moneyInOut.value}
+                await httpPost(url + '/user/money-out', req)
+            }
+
+            const openLong = async () => {
+                const req = {goodsId: goodsId.value, price: price.value, num: num.value}
+                await httpPost(url + '/user/open-long', req)
+            }
+
+            const openShort = async () => {
+                const req = {goodsId: goodsId.value, price: price.value, num: num.value}
+                await httpPost(url + '/user/open-short', req)
+            }
+
+            const closeLong = async () => {
+                const req = {goodsId: goodsId.value, price: price.value, num: num.value}
+                await httpPost(url + '/user/close-long', req)
+            }
+
+            const closeShort = async () => {
+                const req = {goodsId: goodsId.value, price: price.value, num: num.value}
+                await httpPost(url + '/user/close-short', req)
+            }
+
+            const cancel = async (orderId) => {
+                const order = orderList.value.find(order => order.orderId === orderId)
+                const req = {orderId: order.orderId, goodsId: goodsId.value, num: order.availableNum}
+                await httpPost(url + '/user/cancel', req)
+            }
+
+            const webSocket = async () => {
+                const ws = new WebSocket(url + '/ws/' + localStorage.getItem("token"))
+                ws.onopen = function (event) {
+                    console.log(event)
+                }
+
+                ws.onmessage = function (event) {
+                    const data = JSON.parse(event.data)
+                    if (data.code === 0) {
+                        const messageType = data.data.messageType
+                        if (messageType === 0 || messageType === 1 || messageType === 2) {
+                            userInfo()
+                        } else if (messageType === 3 || messageType === 4 || messageType === 5
+                            || messageType === 6 || messageType === 7) {
+                            if (userId.value == data.data.data.userId) {
+                                userInfo()
+                                if (goodsId.value === data.data.data.goodsId) {
+                                    userOrderList()
+                                    userOrderBook()
+                                }
+                            } else {
+                                if (goodsId.value === data.data.data.goodsId) {
+                                    userOrderBook()
+                                }
+                            }
+                        } else if (messageType === 99) {
+                            const buyUserId = data.data.data.buyUserId
+                            const sellUserId = data.data.data.sellUserId
+                            if (userId.value == buyUserId || userId.value == sellUserId) {
+                                userInfo()
+                                if (goodsId.value === data.data.data.goodsId) {
+                                    userGoodsInfo()
+                                    userOrderList()
+                                    userOrderBook()
+                                    userDealList()
+                                    updateKline(data.data.data)
+                                }
+                            } else {
+                                if (goodsId.value === data.data.data.goodsId) {
+                                    userGoodsInfo()
+                                    userOrderBook()
+                                    userDealList()
+                                    updateKline(data.data.data)
+                                }
+                            }
+                        }
+                    } else {
+                        ElMessage({
+                            message: data.message,
+                            type: 'error',
+                        })
+                    }
+                }
+
+                ws.onclose = function (event) {
+                    console.log(event)
+                }
+
+                ws.onerror = function (error) {
+                    console.error(error)
+                }
+            }
+
+            const updateKline = (data99) => {
+                //更新k线
+                const tick = data99['tick' + interval.value]
+                if (!isChartInit) {
+                    chart.applyNewData([tick])
+                    isChartInit = true
+                } else {
+                    chart.updateData(tick)
+                }
+                //更新当前价
+                currentPrice.value = tick.close
+            }
+
+            // function throttle(func, limit) {
+            //     let isThrottled = false;
+            //     let lastArgs = null
+            //     const throttledFunc = function (...args) {
+            //         if (!isThrottled) {
+            //             isThrottled = true;
+            //             func.apply(this, args);
+            //             setTimeout(() => {
+            //                 isThrottled = false;
+            //                 if (lastArgs) {
+            //                     throttledFunc(...lastArgs)
+            //                     lastArgs = null
+            //                 }
+            //             }, limit);
+            //         } else {
+            //             lastArgs = args
+            //         }
+            //     }
+            //     return throttledFunc
+            // }
+
+            const httpPost = async (url, req) => {
+                try {
+                    const data = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'token': localStorage.getItem("token")
+                        },
+                        body: JSON.stringify(req)
+                    }).then(response => response.json())
+                    if (data.code === 0) {
+                        return data
+                    } else {
+                        ElMessage({
+                            message: data.message,
+                            type: 'error',
+                        })
+                    }
+                } catch (error) {
+                    console.error(error)
+                }
+            }
+
+            onMounted(() => {
+                login();
+            })
+
+            window.onresize = function () {
+                if (chart) {
+                    chart.resize()
+                }
+            }
+
+            return {
+                loading,
+                goodsId,
+                goodsList,
+                interval,
+                intervalList,
+                currentPrice,
+                upPrice,
+                downPrice,
+                margin,
+                fee,
+                userId,
+                username,
+                money,
+                marginTotal,
+                gainLossTotal,
+                longNum,
+                shortNum,
+                orderList,
+                orderTypeLabels,
+                sellList,
+                buyList,
+                dealList,
+                moneyInOut,
+                price,
+                num,
+                goodsChange,
+                intervalChange,
+                moneyIn,
+                moneyOut,
+                openLong,
+                closeLong,
+                openShort,
+                closeShort,
+                cancel,
+            }
+        }
+    });
+    App.use(ElementPlus)
+    App.mount("#app")
+</script>
+</body>
+</html>

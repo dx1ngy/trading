@@ -1,0 +1,37 @@
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/trading?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true&autoReconnect=true&failOverReadOnly=false
+    username: root
+    password: GewMxiNfOtgdaPd7
+  data:
+    redis:
+      host: 127.0.0.1
+      database: 0
+      port: 6379
+      password: GewMxiNfOtgdaPd7
+  kafka:
+    bootstrap-servers:
+      - 192.168.1.25:9192
+      - 192.168.1.25:9292
+      - 192.168.1.25:9392
+    listener:
+      type: batch
+      ack-mode: manual_immediate
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      max-poll-records: 5000
+      value-deserializer: com.dx1ngy.trading.common.kryo.KryoDeserializer
+    producer:
+      acks: all
+      compression-type: snappy
+      value-serializer: com.dx1ngy.trading.common.kryo.KryoSerializer
+trading-api:
+  engine-base-url: http://127.0.0.1:9001
+  quotation-base-url: http://127.0.0.1:9002
