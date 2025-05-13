@@ -2,7 +2,7 @@
 
 高速、可靠、可扩展的交易系统，专为股票、期货、加密货币、高频撮合等场景设计，提供微秒级延迟的交易处理能力。
 
-![项目截图](https://img.yc8879.com/trading.png) <!-- 可选 -->
+![trading](https://github.com/user-attachments/assets/094aa3ec-d790-4250-8b0c-c1e93c2cea01)
 
 ## 技术栈
 
