@@ -50,11 +50,11 @@
     docker compose up -d
     ```
 
-4. 创建数据库和表
+4. 创建数据库和表  
    等待docker启动成功后，连接上mysql创建数据库名为trading，并执行trading.sql（在trading/sql目录下）初始化表。
 
 
-5. 修改配置文件
+5. 修改配置文件  
    将trading-api、trading-engine、trading-quotation的配置文件和docker-compose.yml文件中的配置对应，并且将trading-engine配置文件中snapshot-path改为本地某个路径。
 
 
@@ -72,7 +72,7 @@
     java -java trading-quotation-1.0.jar
     ```
 
-8. 启动客户端页面
+8. 启动客户端页面  
    使用浏览器访问index.html（trading/html目录下）。
 
 ### API文档
