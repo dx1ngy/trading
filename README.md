@@ -36,7 +36,7 @@
 git clone https://github.com/dx1ngy/trading.git
 ```
 
-#### 修改docker-compose.yml（trading/docker目录下）配置，注意需要将下面的配置的ip改为docker宿主机的ip，其他配置可改可不改
+#### 修改docker-compose.yml（trading/docker目录下）配置，注意需要将下面的配置的ip改为docker宿主机的ip，其他配置可改可不改。
 
 ```
 KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://192.168.1.25:9192
@@ -50,17 +50,9 @@ KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://192.168.1.25:9392
 docker compose up -d
 ```
 
-#### 创建数据库和表
+#### 创建数据库和表，等待docker启动成功后，连接上mysql创建数据库名为trading，并执行trading.sql（在trading/sql目录下）初始化表。
 
-```
-等待docker启动成功后，连接上mysql创建数据库名为trading，并执行trading.sql（在trading/sql目录下）初始化表
-```
-
-#### 修改配置文件
-
-```
-将trading-api、trading-engine、trading-quotation的配置文件和docker-compose.yml文件中的配置对应，并且将trading-engine配置文件中snapshot-path改为本地某个路径
-```
+#### 修改配置文件，将trading-api、trading-engine、trading-quotation的配置文件和docker-compose.yml文件中的配置对应，并且将trading-engine配置文件中snapshot-path改为本地某个路径。
 
 #### 构建
 
@@ -76,11 +68,7 @@ java -java trading-engine-1.0.jar
 java -java trading-quotation-1.0.jar
 ```
 
-#### 启动客户端页面
-
-```
-使用浏览器访问index.html（trading/html目录下）
-```
+#### 启动客户端页面，使用浏览器访问index.html（trading/html目录下）。
 
 ### API文档
 
