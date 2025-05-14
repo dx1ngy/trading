@@ -2,7 +2,9 @@ package com.dx1ngy.trading.engine.manager;
 
 import com.dx1ngy.core.utils.JsonUtil;
 import com.dx1ngy.trading.common.bean.Message;
+import com.dx1ngy.trading.common.bean.Snapshot;
 import com.dx1ngy.trading.engine.TradingEngineProperties;
+import com.dx1ngy.trading.engine.consumer.SnapshotQueueHandler;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -13,13 +15,10 @@ import org.springframework.kafka.annotation.TopicPartition;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 
 
@@ -37,16 +36,19 @@ public class TradingEngine {
     private final OrderManager orderManager;
     private final MatchEngineManager matchEngineManager;
     private final TradingEngineProperties tradingEngineProperties;
+    private final SnapshotQueueHandler snapshotQueueHandler;
 
     public TradingEngine(MessageManager messageManager,
                          UserManager userManager, OrderManager orderManager,
                          MatchEngineManager matchEngineManager,
-                         TradingEngineProperties tradingEngineProperties) {
+                         TradingEngineProperties tradingEngineProperties,
+                         SnapshotQueueHandler snapshotQueueHandler) {
         this.messageManager = messageManager;
         this.userManager = userManager;
         this.orderManager = orderManager;
         this.matchEngineManager = matchEngineManager;
         this.tradingEngineProperties = tradingEngineProperties;
+        this.snapshotQueueHandler = snapshotQueueHandler;
     }
 
     @PostConstruct
@@ -80,7 +82,7 @@ public class TradingEngine {
         }
     }
 
-    private void save() throws IOException {
+    private void save() {
         var snapshot = new Snapshot();
         snapshot.setLastOffset(lastOffset);
         snapshot.setDealId(MatchEngine.getDealId());
@@ -89,10 +91,7 @@ public class TradingEngine {
         snapshot.setGoodsPriceMap(orderManager.getGoodsPriceMap());
         snapshot.setUserMap(userManager.getUserMap());
         snapshot.setUserPositonMap(userManager.getUserPositonMap());
-        String path = tradingEngineProperties.getSnapshotPath() + "snapshot-" +
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss-" + lastOffset)) + ".json";
-        Files.writeString(Paths.get(path), JsonUtil.toJson(snapshot), StandardCharsets.UTF_8);
-        log.info("保存内存快照成功={}", path);
+        snapshotQueueHandler.publish(lastOffset, JsonUtil.toJson(snapshot));
     }
 
     private void load() {

@@ -1,6 +1,5 @@
-package com.dx1ngy.trading.engine.manager;
+package com.dx1ngy.trading.common.bean;
 
-import com.dx1ngy.trading.common.bean.Goods;
 import lombok.Data;
 
 import java.math.BigDecimal;

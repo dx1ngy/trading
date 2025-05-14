@@ -1,4 +1,4 @@
-package com.dx1ngy.trading.engine.manager;
+package com.dx1ngy.trading.common.bean;
 
 import lombok.Data;
 
